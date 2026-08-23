@@ -1237,9 +1237,9 @@ Content`,
 				return parsed;
 			};
 
-			expect(parseNpm("npm:@scope/pkg@1.2.3").repinned).toBe(true);
-			expect(parseNpm("npm:@scope/pkg@^1.2.3").repinned).toBe(false);
-			expect(parseNpm("npm:pkg").repinned).toBe(false);
+			expect(parseNpm("npm:@scope/pkg@1.2.3").pinned).toBe(true);
+			expect(parseNpm("npm:@scope/pkg@^1.2.3").pinned).toBe(false);
+			expect(parseNpm("npm:pkg").pinned).toBe(false);
 
 			expect((packageManager as any).parseSource("git:github.com/user/repo@v1").type).toBe("git");
 			expect((packageManager as any).parseSource("https://github.com/user/repo@v1").type).toBe("git");
@@ -1389,7 +1389,7 @@ Content`,
 			expect(parsed.type).toBe("git");
 			expect(parsed.host).toBe("github.com");
 			expect(parsed.path).toBe("user/repo");
-			expect(parsed.repinned).toBe(false);
+			expect(parsed.pinned).toBe(false);
 		});
 
 		it("should parse HTTPS URLs with git: prefix", async () => {
@@ -1405,7 +1405,7 @@ Content`,
 			expect(parsed.host).toBe("github.com");
 			expect(parsed.path).toBe("user/repo");
 			expect(parsed.ref).toBe("v1.2.3");
-			expect(parsed.repinned).toBe(true);
+			expect(parsed.pinned).toBe(true);
 		});
 
 		it("should parse host/path shorthand only with git: prefix", async () => {
@@ -1488,7 +1488,7 @@ Content`,
 			// This tests that the ref is properly extracted and stored
 			const parsed = (packageManager as any).parseSource("https://github.com/user/repo@main");
 			expect(parsed.ref).toBe("main");
-			expect(parsed.repinned).toBe(true);
+			expect(parsed.pinned).toBe(true);
 
 			const parsed2 = (packageManager as any).parseSource("https://github.com/user/repo@feature/branch");
 			expect(parsed2.ref).toBe("feature/branch");
@@ -1838,7 +1838,7 @@ Content`,
 			writeFileSync(join(pkgDir, "extensions", "bar.ts"), "export default function() {}");
 			settingsManager.setPackages(["npm:pi-tools"]);
 			settingsManager.setProjectPackages([
-				{ source: "npm:pi-tools", autoload: false, extensions: ["-extensions/foo.ts"] },
+				{ source: "npm:pi-tools", autoload: false, extensions: [join("-extensions", "foo.ts")] },
 			]);
 			const runCommandSpy = vi
 				.spyOn(packageManager as unknown as PackageManagerInternals, "runCommand")
@@ -1865,7 +1865,11 @@ Content`,
 			writeFileSync(join(pkgDir, "extensions", "bar.ts"), "export default function() {}");
 			writeFileSync(join(pkgDir, "skills", "foo", "SKILL.md"), "# Foo\n");
 			settingsManager.setProjectPackages([
-				{ source: relative(join(tempDir, ".repi"), pkgDir), autoload: false, extensions: ["+extensions/foo.ts"] },
+				{
+					source: relative(join(tempDir, ".repi"), pkgDir),
+					autoload: false,
+					extensions: [join("+extensions", "foo.ts")],
+				},
 			]);
 
 			const result = await packageManager.resolve();

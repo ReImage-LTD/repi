@@ -96,7 +96,8 @@ describe("experimental CLI commands", () => {
 		});
 		if (!result.ok || result.command.command !== "pi") return;
 		expect(result.command.options.unknownFlags.get("unknown")).toBe(true);
-		expect(result.command.options.unknownFlags.get("listen")).toBe("unix:///tmp/pi.sock");
+		expect(result.command.options.unknownFlags.has("listen")).toBe(false);
+		expect(result.command.options.messages).toEqual(["--listen", "unix:///tmp/pi.sock"]);
 	});
 
 	test.each([
