@@ -1,13 +1,14 @@
 {
-	"name": "@earendil-works/pi-coding-agent",
+	"name": "@reimage-ltd/repi",
 	"version": "0.84.2",
-	"description": "Coding agent CLI with read, bash, edit, write tools and session management",
+	"description": "Repi coding agent CLI with read, bash, edit, write tools and session management",
 	"type": "module",
 	"piConfig": {
-		"configDir": ".pi"
+		"name": "repi",
+		"configDir": ".repi"
 	},
 	"bin": {
-		"pi": "dist/bundle/cli.js"
+		"repi": "dist/bundle/cli.js"
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -93,11 +94,11 @@
 		"tui",
 		"agent"
 	],
-	"author": "Mario Zechner",
+	"author": "ReImage-LTD",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/earendil-works/pi.git",
+		"url": "git+https://github.com/ReImage-LTD/repi.git",
 		"directory": "packages/coding-agent"
 	},
 	"engines": {

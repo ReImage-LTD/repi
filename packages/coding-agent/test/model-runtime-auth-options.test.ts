@@ -1,5 +1,5 @@
 import { type AuthType, type CredentialStore, InMemoryCredentialStore } from "@earendil-works/pi-ai";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AuthStorage } from "../src/core/auth-storage.ts";
 import { ModelRuntime } from "../src/core/model-runtime.ts";
 
@@ -103,6 +103,101 @@ describe("ModelRuntime auth options", () => {
 		expect(authOptions(runtime, "api_key").every((option) => option.type === "api_key")).toBe(true);
 		expect(authOptions(runtime, "oauth").every((option) => option.type === "oauth")).toBe(true);
 		expect(options.some((option) => option.provider.id === "openai-codex" && option.type === "api_key")).toBe(false);
+	});
+
+	it("exposes independent OpenAI Codex account slots", async () => {
+		const runtime = await ModelRuntime.create({ credentials: AuthStorage.inMemory(), modelsPath: null });
+		const first = runtime.getProvider("openai-codex-account-1");
+		const second = runtime.getProvider("openai-codex-account-2");
+
+		expect(first).toMatchObject({ id: "openai-codex-account-1", name: "OpenAI Codex · Account 1" });
+		expect(second).toMatchObject({ id: "openai-codex-account-2", name: "OpenAI Codex · Account 2" });
+		expect(first?.auth).toBe(second?.auth);
+		expect(first?.getModels().every((model) => model.provider === "openai-codex-account-1")).toBe(true);
+		expect(second?.getModels().every((model) => model.provider === "openai-codex-account-2")).toBe(true);
+		expect(runtime.getNextCodexAccountProviderId()).toBe("openai-codex-account-1");
+	});
+
+	it("resolves a different stored OAuth credential for each Codex account slot", async () => {
+		const expires = Date.now() + 60 * 60_000;
+		const runtime = await ModelRuntime.create({
+			credentials: AuthStorage.inMemory({
+				"openai-codex-account-1": {
+					type: "oauth",
+					access: "account-one-access",
+					refresh: "account-one-refresh",
+					expires,
+				},
+				"openai-codex-account-2": {
+					type: "oauth",
+					access: "account-two-access",
+					refresh: "account-two-refresh",
+					expires,
+				},
+			}),
+			modelsPath: null,
+		});
+
+		expect((await runtime.getAuth("openai-codex-account-1"))?.auth.apiKey).toBe("account-one-access");
+		expect((await runtime.getAuth("openai-codex-account-2"))?.auth.apiKey).toBe("account-two-access");
+		expect(runtime.getNextCodexAccountProviderId()).toBe("openai-codex-account-3");
+	});
+
+	it("logout removes only the selected Codex account slot", async () => {
+		const expires = Date.now() + 60 * 60_000;
+		const credentials = AuthStorage.inMemory({
+			"openai-codex-account-1": {
+				type: "oauth",
+				access: "account-one-access",
+				refresh: "account-one-refresh",
+				expires,
+			},
+			"openai-codex-account-2": {
+				type: "oauth",
+				access: "account-two-access",
+				refresh: "account-two-refresh",
+				expires,
+			},
+		});
+		const runtime = await ModelRuntime.create({ credentials, modelsPath: null });
+
+		await runtime.logout("openai-codex-account-1");
+
+		expect(await credentials.read("openai-codex-account-1")).toBeUndefined();
+		expect(await credentials.read("openai-codex-account-2")).toMatchObject({ access: "account-two-access" });
+		expect(runtime.hasConfiguredAuth("openai-codex-account-1")).toBe(false);
+		expect(runtime.hasConfiguredAuth("openai-codex-account-2")).toBe(true);
+		expect(runtime.getAvailableSnapshot().some((model) => model.provider === "openai-codex-account-2")).toBe(true);
+	});
+
+	it("allows Codex account slots to log in concurrently without sharing credentials", async () => {
+		const credentials = AuthStorage.inMemory();
+		const runtime = await ModelRuntime.create({ credentials, modelsPath: null });
+		const oauth = runtime.getProvider("openai-codex-account-1")?.auth.oauth;
+		if (!oauth) throw new Error("OpenAI Codex OAuth provider is not registered");
+		const login = vi.spyOn(oauth, "login").mockImplementation(async (interaction) => ({
+			type: "oauth",
+			access: await interaction.prompt({ type: "text", message: "Account access token" }),
+			refresh: "test-refresh-token",
+			expires: Date.now() + 60 * 60_000,
+		}));
+
+		await Promise.all([
+			runtime.login("openai-codex-account-1", "oauth", {
+				prompt: async () => "account-one-access",
+				notify: () => {},
+			}),
+			runtime.login("openai-codex-account-2", "oauth", {
+				prompt: async () => "account-two-access",
+				notify: () => {},
+			}),
+		]);
+
+		expect(login).toHaveBeenCalledTimes(2);
+		expect(await credentials.read("openai-codex-account-1")).toMatchObject({ access: "account-one-access" });
+		expect(await credentials.read("openai-codex-account-2")).toMatchObject({ access: "account-two-access" });
+		expect(runtime.hasConfiguredAuth("openai-codex-account-1")).toBe(true);
+		expect(runtime.hasConfiguredAuth("openai-codex-account-2")).toBe(true);
 	});
 
 	it("attaches the provider's active auth status to every method option", async () => {

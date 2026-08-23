@@ -5395,6 +5395,11 @@ export class InteractiveMode {
 		const options: AuthSelectorProvider[] = [];
 		for (const provider of this.session.modelRuntime.getProviders()) {
 			const authStatus = this.session.modelRuntime.getProviderAuthStatus(provider.id);
+			if (provider.id.startsWith("openai-codex-account-") && !authStatus.configured) continue;
+			const codexAccountSlot =
+				provider.id === "openai-codex" && authStatus.configured
+					? this.session.modelRuntime.getNextCodexAccountProviderId()
+					: undefined;
 			const status = authStatus.configured
 				? {
 						type: this.session.modelRuntime.isUsingOAuth(provider.id) ? ("oauth" as const) : ("api_key" as const),
@@ -5403,8 +5408,8 @@ export class InteractiveMode {
 				: undefined;
 			if ((!authType || authType === "oauth") && provider.auth.oauth) {
 				options.push({
-					id: provider.id,
-					name: provider.name,
+					id: codexAccountSlot ?? provider.id,
+					name: codexAccountSlot ? `${provider.name} · Add account` : provider.name,
 					authType: "oauth",
 					method: provider.auth.oauth,
 					status,

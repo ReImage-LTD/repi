@@ -315,17 +315,18 @@ export class ModelSelectorComponent extends Container implements Focusable {
 			const isCurrent = modelsAreEqual(this.currentModel, item.model);
 			const isDefault = this.isDefaultModel(item.model);
 			const defaultBadge = isDefault ? theme.fg("muted", " · default") : "";
+			const providerName = this.modelRuntime.getProvider(item.provider)?.name ?? item.provider;
 
 			let line = "";
 			if (isSelected) {
 				const prefix = theme.fg("accent", "→ ");
 				const modelText = `${item.id}`;
-				const providerBadge = theme.fg("muted", `[${item.provider}]`);
+				const providerBadge = theme.fg("muted", `[${providerName}]`);
 				const checkmark = isCurrent ? theme.fg("success", " ✓") : "";
 				line = `${prefix + theme.fg("accent", modelText)} ${providerBadge}${defaultBadge}${checkmark}`;
 			} else {
 				const modelText = `  ${item.id}`;
-				const providerBadge = theme.fg("muted", `[${item.provider}]`);
+				const providerBadge = theme.fg("muted", `[${providerName}]`);
 				const checkmark = isCurrent ? theme.fg("success", " ✓") : "";
 				line = `${modelText} ${providerBadge}${defaultBadge}${checkmark}`;
 			}

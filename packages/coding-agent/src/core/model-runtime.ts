@@ -63,6 +63,39 @@ interface ModelRuntimeSnapshot {
 	auth: ReadonlyMap<string, AuthCheck | undefined>;
 }
 
+/**
+ * Dedicated OAuth slots let a single Pi installation keep several ChatGPT
+ * subscriptions signed in at once. Each slot is a normal provider as far as
+ * the model runtime is concerned, so auth refreshes and concurrent requests
+ * stay isolated.
+ */
+const CODEX_ACCOUNT_SLOTS = 8;
+const CODEX_ACCOUNT_PROVIDER_PREFIX = "openai-codex-account-";
+
+function createCodexAccountProvider(source: Provider, account: number): Provider {
+	const id = `${CODEX_ACCOUNT_PROVIDER_PREFIX}${account}`;
+	const label = `Account ${account}`;
+	return {
+		id,
+		name: `${source.name} · ${label}`,
+		baseUrl: source.baseUrl,
+		headers: source.headers,
+		auth: source.auth,
+		getModels: () =>
+			source.getModels().map((model) => ({ ...model, provider: id, name: `${model.name} · ${label}` })),
+		filterModels: source.filterModels,
+		stream: (model, context, options) => source.stream({ ...model, provider: source.id }, context, options),
+		streamSimple: (model, context, options) =>
+			source.streamSimple({ ...model, provider: source.id }, context, options),
+		fetchDeferred: source.fetchDeferred
+			? (model, handle, options) => source.fetchDeferred!({ ...model, provider: source.id }, handle, options)
+			: undefined,
+		cancelDeferred: source.cancelDeferred
+			? (model, handle, options) => source.cancelDeferred!({ ...model, provider: source.id }, handle, options)
+			: undefined,
+	};
+}
+
 export interface CreateModelRuntimeOptions {
 	/** Credential storage. Defaults to the file at authPath. */
 	credentials?: CredentialStore;
@@ -219,6 +252,12 @@ export class ModelRuntime implements Models {
 	private configureRadiusProviders(): void {
 		this.builtins.clear();
 		for (const [providerId, provider] of this.defaultBuiltins) this.builtins.set(providerId, provider);
+		const codex = this.defaultBuiltins.get("openai-codex");
+		if (codex) {
+			for (let account = 1; account <= CODEX_ACCOUNT_SLOTS; account++) {
+				this.builtins.set(`${CODEX_ACCOUNT_PROVIDER_PREFIX}${account}`, createCodexAccountProvider(codex, account));
+			}
+		}
 		for (const providerId of this.config.getProviderIds()) {
 			const config = this.config.getProvider(providerId);
 			if (config?.oauth !== "radius" || !config.baseUrl) continue;
@@ -461,6 +500,21 @@ export class ModelRuntime implements Models {
 
 	isUsingSubscription(providerId: string): boolean {
 		return this.isUsingOAuth(providerId) && this.models.getProvider(providerId)?.auth.oauth?.isSubscription === true;
+	}
+
+	/** Return the first unused persistent OpenAI Codex account slot, if one remains. */
+	getNextCodexAccountProviderId(): string | undefined {
+		for (let account = 1; account <= CODEX_ACCOUNT_SLOTS; account++) {
+			const providerId = `${CODEX_ACCOUNT_PROVIDER_PREFIX}${account}`;
+			if (
+				!this.credentials.hasRuntimeApiKey(providerId) &&
+				!this.snapshot.storedProviders.has(providerId) &&
+				!this.snapshot.configuredProviders.has(providerId)
+			) {
+				return providerId;
+			}
+		}
+		return undefined;
 	}
 
 	hasConfiguredAuth(providerId: string): boolean {
