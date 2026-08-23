@@ -1,4 +1,4 @@
-name: Build Binaries
+name: Build Repi Binaries
 
 on:
   push:
@@ -61,7 +61,7 @@ jobs:
           ./scripts/create-source-archive.sh \
             --version "${VERSION}" \
             --ref HEAD \
-            --out "release-assets/pi-${VERSION}-source.tar.gz"
+            --out "release-assets/repi-${VERSION}-source.tar.gz"
 
       - name: Build binaries from source archive
         run: |
@@ -70,8 +70,8 @@ jobs:
           VERSION="${RELEASE_TAG#v}"
           build_root="$(mktemp -d)"
           trap 'rm -rf "${build_root}"' EXIT
-          tar -xzf "release-assets/pi-${VERSION}-source.tar.gz" -C "${build_root}"
-          "${build_root}/pi-${VERSION}/scripts/build-binaries.sh" \
+          tar -xzf "release-assets/repi-${VERSION}-source.tar.gz" -C "${build_root}"
+          "${build_root}/repi-${VERSION}/scripts/build-binaries.sh" \
             --offline-model-data \
             --out "${GITHUB_WORKSPACE}/packages/coding-agent/binaries"
 
@@ -85,18 +85,18 @@ jobs:
           VERSION="${VERSION#v}"  # Remove 'v' prefix
           node scripts/release-notes.mjs extract --version "${VERSION}" --tag "${RELEASE_TAG}" --out release-assets/RELEASE_NOTES.md
           node scripts/generate-coding-agent-install-lock.mjs --check
-          cp packages/coding-agent/install-lock/package.json release-assets/pi-coding-agent-install-package.json
-          cp packages/coding-agent/install-lock/package-lock.json release-assets/pi-coding-agent-install-package-lock.json
+          cp packages/coding-agent/install-lock/package.json release-assets/repi-install-package.json
+          cp packages/coding-agent/install-lock/package-lock.json release-assets/repi-install-package-lock.json
 
           cd packages/coding-agent/binaries
 
           binary_assets=(
-            pi-darwin-arm64.tar.gz
-            pi-darwin-x64.tar.gz
-            pi-linux-x64.tar.gz
-            pi-linux-arm64.tar.gz
-            pi-windows-x64.zip
-            pi-windows-arm64.zip
+            repi-darwin-arm64.tar.gz
+            repi-darwin-x64.tar.gz
+            repi-linux-x64.tar.gz
+            repi-linux-arm64.tar.gz
+            repi-windows-x64.zip
+            repi-windows-arm64.zip
           )
 
           for asset in "${binary_assets[@]}"; do
@@ -106,17 +106,17 @@ jobs:
           cp "${binary_assets[@]}" "${GITHUB_WORKSPACE}/release-assets/"
 
           cd "${GITHUB_WORKSPACE}/release-assets"
-          source_asset="pi-${VERSION}-source.tar.gz"
+          source_asset="repi-${VERSION}-source.tar.gz"
           release_assets=(
             "${source_asset}"
-            pi-darwin-arm64.tar.gz
-            pi-darwin-x64.tar.gz
-            pi-linux-x64.tar.gz
-            pi-linux-arm64.tar.gz
-            pi-windows-x64.zip
-            pi-windows-arm64.zip
-            pi-coding-agent-install-package.json
-            pi-coding-agent-install-package-lock.json
+            repi-darwin-arm64.tar.gz
+            repi-darwin-x64.tar.gz
+            repi-linux-x64.tar.gz
+            repi-linux-arm64.tar.gz
+            repi-windows-x64.zip
+            repi-windows-arm64.zip
+            repi-install-package.json
+            repi-install-package-lock.json
           )
           sha256sum "${release_assets[@]}" > SHA256SUMS
 
@@ -159,21 +159,21 @@ jobs:
           case "${runtime_platform}" in
             darwin-arm64|darwin-x64|linux-arm64|linux-x64)
               platform="${runtime_platform}"
-              archive="release-assets/pi-${platform}.tar.gz"
-              root="extracted/pi"
-              binary="${root}/pi"
+              archive="release-assets/repi-${platform}.tar.gz"
+              root="extracted/repi"
+              binary="${root}/repi"
               ;;
             win32-arm64)
               platform="windows-arm64"
-              archive="release-assets/pi-${platform}.zip"
+              archive="release-assets/repi-${platform}.zip"
               root="extracted"
-              binary="${root}/pi.exe"
+              binary="${root}/repi.exe"
               ;;
             win32-x64)
               platform="windows-x64"
-              archive="release-assets/pi-${platform}.zip"
+              archive="release-assets/repi-${platform}.zip"
               root="extracted"
-              binary="${root}/pi.exe"
+              binary="${root}/repi.exe"
               ;;
             *)
               echo "::error::Unsupported runner platform ${runtime_platform}"
@@ -217,17 +217,17 @@ jobs:
           cd release-assets
 
           VERSION="${RELEASE_TAG#v}"
-          source_asset="pi-${VERSION}-source.tar.gz"
+          source_asset="repi-${VERSION}-source.tar.gz"
           expected_assets=(
             "${source_asset}"
-            pi-darwin-arm64.tar.gz
-            pi-darwin-x64.tar.gz
-            pi-linux-x64.tar.gz
-            pi-linux-arm64.tar.gz
-            pi-windows-x64.zip
-            pi-windows-arm64.zip
-            pi-coding-agent-install-package.json
-            pi-coding-agent-install-package-lock.json
+            repi-darwin-arm64.tar.gz
+            repi-darwin-x64.tar.gz
+            repi-linux-x64.tar.gz
+            repi-linux-arm64.tar.gz
+            repi-windows-x64.zip
+            repi-windows-arm64.zip
+            repi-install-package.json
+            repi-install-package-lock.json
             SHA256SUMS
             RELEASE_NOTES.md
           )
@@ -247,17 +247,17 @@ jobs:
           cd release-assets
 
           VERSION="${RELEASE_TAG#v}"
-          source_asset="pi-${VERSION}-source.tar.gz"
+          source_asset="repi-${VERSION}-source.tar.gz"
           release_assets=(
             "${source_asset}"
-            pi-darwin-arm64.tar.gz
-            pi-darwin-x64.tar.gz
-            pi-linux-x64.tar.gz
-            pi-linux-arm64.tar.gz
-            pi-windows-x64.zip
-            pi-windows-arm64.zip
-            pi-coding-agent-install-package.json
-            pi-coding-agent-install-package-lock.json
+            repi-darwin-arm64.tar.gz
+            repi-darwin-x64.tar.gz
+            repi-linux-x64.tar.gz
+            repi-linux-arm64.tar.gz
+            repi-windows-x64.zip
+            repi-windows-arm64.zip
+            repi-install-package.json
+            repi-install-package-lock.json
             SHA256SUMS
           )
 
@@ -286,103 +286,9 @@ jobs:
             exit 1
           fi
 
-  publish-npm:
-    runs-on: ubuntu-latest
-    needs: stage-github-release
-    environment: npm-publish
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
-      SOURCE_REF: ${{ github.event.inputs.source_ref || github.event.inputs.tag || github.ref_name }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SOURCE_REF }}
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-          cache: npm
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev fd-find ripgrep
-          sudo ln -s $(which fdfind) /usr/local/bin/fd
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Build
-        run: npm run build
-
-      - name: Check
-        run: npm run check
-
-      - name: Test
-        run: npm test
-
-      - name: Upgrade npm for trusted publishing
-        run: |
-          npm install -g npm@11.16.0 --ignore-scripts
-          npm --version
-
-      - name: Publish npm packages
-        run: node scripts/publish.mjs
-
-  announce-pi-dev-release:
-    runs-on: ubuntu-latest
-    needs: publish-npm
-    environment: pi-model-upload
-    concurrency:
-      group: announce-pi-dev-release
-      cancel-in-progress: false
-    permissions:
-      contents: read
-    env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
-      SOURCE_REF: ${{ github.event.inputs.source_ref || github.event.inputs.tag || github.ref_name }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.PI_ARTIFACTS_R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PI_ARTIFACTS_R2_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: auto
-      AWS_EC2_METADATA_DISABLED: 'true'
-      R2_ENDPOINT: https://67c0d357268b0fca6e0b465bb9d01b84.r2.cloudflarestorage.com
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SOURCE_REF }}
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '22'
-
-      - name: Verify AWS CLI
-        run: aws --version
-
-      - name: Announce verified release on pi.dev
-        run: |
-          node scripts/publish-release-announcement.mjs \
-            --version "${RELEASE_TAG#v}" \
-            --bucket pi-artifacts \
-            --endpoint "$R2_ENDPOINT" \
-            --installer-package-json packages/coding-agent/install-lock/package.json \
-            --installer-package-lock packages/coding-agent/install-lock/package-lock.json
-
   publish-github-release:
     runs-on: ubuntu-latest
-    needs:
-      - stage-github-release
-      - publish-npm
-      - announce-pi-dev-release
+    needs: stage-github-release
     permissions:
       contents: write
     env:
@@ -412,10 +318,8 @@ jobs:
     needs:
       - build
       - stage-github-release
-      - publish-npm
-      - announce-pi-dev-release
       - publish-github-release
-    if: ${{ always() && needs.stage-github-release.result != 'skipped' && (needs.stage-github-release.result != 'success' || needs.publish-npm.result != 'success' || needs.announce-pi-dev-release.result != 'success' || needs.publish-github-release.result != 'success') }}
+    if: ${{ always() && needs.stage-github-release.result != 'skipped' && (needs.stage-github-release.result != 'success' || needs.publish-github-release.result != 'success') }}
     permissions:
       contents: write
     env:
