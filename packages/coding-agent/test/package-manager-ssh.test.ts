@@ -53,7 +53,7 @@ describe("Package Manager git source parsing", () => {
 			expect(parsed.host).toBe("github.com");
 			expect(parsed.path).toBe("user/repo");
 			expect(parsed.repo).toBe("git@github.com:user/repo");
-			expect(parsed.pinned).toBe(false);
+			expect(parsed.repinned).toBe(false);
 		});
 
 		it("should parse host/path shorthand", () => {
@@ -67,7 +67,7 @@ describe("Package Manager git source parsing", () => {
 			const parsed = (packageManager as any).parseSource("git:git@github.com:user/repo@v1.0.0");
 			expect(parsed.type).toBe("git");
 			expect(parsed.ref).toBe("v1.0.0");
-			expect(parsed.pinned).toBe(true);
+			expect(parsed.repinned).toBe(true);
 		});
 	});
 

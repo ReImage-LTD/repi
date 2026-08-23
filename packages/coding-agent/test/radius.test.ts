@@ -93,7 +93,7 @@ describe("Radius provider", () => {
 		expect((await modelsStore.read(RADIUS_PROVIDER_ID))?.models).toHaveLength(1);
 		const radiusRequest = vi
 			.mocked(fetch)
-			.mock.calls.find(([url]) => String(url) === "https://radius.pi.dev/v1/config");
+			.mock.calls.find(([url]) => String(url) === "https://radius.repi.dev/v1/config");
 		expect(radiusRequest?.[1]?.headers).toMatchObject({ authorization: "Bearer access-token" });
 	});
 
@@ -121,7 +121,7 @@ describe("Radius provider", () => {
 		});
 
 		expect(runtime.getModels(RADIUS_PROVIDER_ID)).toEqual([]);
-		expect(fetchSpy.mock.calls.some(([url]) => String(url).includes("radius.pi.dev/v1/config"))).toBe(false);
+		expect(fetchSpy.mock.calls.some(([url]) => String(url).includes("radius.repi.dev/v1/config"))).toBe(false);
 	});
 
 	it("supports custom Radius gateways from models.json", async () => {
