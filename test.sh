@@ -8,6 +8,16 @@ test_root="$(mktemp -d "$temp_parent/pi-test.XXXXXX")"
 git_askpass="$(type -P false)"
 readonly temp_parent test_root git_askpass
 
+# Git Bash exposes POSIX paths, but Windows Node processes expect native paths.
+# Convert only values that are consumed by the test process; keep shell paths
+# unchanged for cleanup and other bash operations below.
+native_path() {
+	case "$(uname -s)" in
+		MINGW*|MSYS*|CYGWIN*) cygpath -w "$1" ;;
+		*) printf '%s\n' "$1" ;;
+	esac
+}
+
 mkdir -p "$test_root/home/.config" "$test_root/tmp" "$test_root/cache/npm"
 # Mark the generated root so cleanup can verify ownership before deleting it.
 touch "$test_root/.pi-test-owned" "$test_root/npm-userconfig" "$test_root/npm-globalconfig"
@@ -39,14 +49,14 @@ trap cleanup EXIT
 # Start from an empty environment and allow only required platform and test settings.
 test_env=(
 	"PATH=$PATH"
-	"PWD=$PWD"
-	"HOME=$test_root/home"
-	"USERPROFILE=$test_root/home"
-	"TMPDIR=$test_root/tmp"
-	"TMP=$test_root/tmp"
-	"TEMP=$test_root/tmp"
-	"XDG_CONFIG_HOME=$test_root/home/.config"
-	"XDG_CACHE_HOME=$test_root/cache"
+	"PWD=$(native_path "$PWD")"
+	"HOME=$(native_path "$test_root/home")"
+	"USERPROFILE=$(native_path "$test_root/home")"
+	"TMPDIR=$(native_path "$test_root/tmp")"
+	"TMP=$(native_path "$test_root/tmp")"
+	"TEMP=$(native_path "$test_root/tmp")"
+	"XDG_CONFIG_HOME=$(native_path "$test_root/home/.config")"
+	"XDG_CACHE_HOME=$(native_path "$test_root/cache")"
 	"LANG=C"
 	"LC_ALL=C"
 	"TZ=UTC"

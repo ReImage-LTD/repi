@@ -561,7 +561,8 @@ describe("AgentHarness tools", () => {
 					execution.cwd = turnContext.workspace;
 					execution.env = { PI_BASH_PREPARE_EXPLICIT: "explicit" };
 					execution.inheritEnv = false;
-					execution.command += `\nprintf '%s:%s:%s:%s' "$prefix" "\${PI_BASH_PREPARE_INHERITED-}" "$PI_BASH_PREPARE_EXPLICIT" "$PWD"`;
+					const cwdExpression = process.platform === "win32" ? "$(pwd -W)" : "$PWD";
+					execution.command += `\nprintf '%s:%s:%s:%s' "$prefix" "\${PI_BASH_PREPARE_INHERITED-}" "$PI_BASH_PREPARE_EXPLICIT" "${cwdExpression}"`;
 				},
 			});
 
@@ -569,7 +570,8 @@ describe("AgentHarness tools", () => {
 
 			expect(receivedContext).toBe(context);
 			expect(receivedSignal).toBe(controller.signal);
-			expect(textOutput(result)).toBe(`ready::explicit:${getOrThrow(await env.canonicalPath(context.workspace))}`);
+			const expectedCwd = getOrThrow(await env.canonicalPath(context.workspace)).replaceAll("\\", "/");
+			expect(textOutput(result)).toBe(`ready::explicit:${expectedCwd}`);
 		});
 
 		it("supports command prefixes", async () => {
