@@ -182,7 +182,18 @@ jobs:
           esac
 
           mkdir -p extracted
-          tar -xf "${archive}" -C extracted
+          case "${archive}" in
+            *.zip)
+              unzip -q "${archive}" -d extracted
+              ;;
+            *.tar.gz)
+              tar -xzf "${archive}" -C extracted
+              ;;
+            *)
+              echo "::error::Unsupported archive format: ${archive}"
+              exit 1
+              ;;
+          esac
           echo "root=${root}" >> "${GITHUB_OUTPUT}"
           echo "binary=${binary}" >> "${GITHUB_OUTPUT}"
 
