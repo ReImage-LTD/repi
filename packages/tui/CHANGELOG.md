@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed Windows image fallback paths to use portable separators when shortening home-prefixed filenames.
+
 ## [1.0.0] - 2026-08-23
 
 ### Fixed

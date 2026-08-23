@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed Windows test harness paths, platform-specific CLI expectations, and package source assertions.
+
 ## [1.0.0] - 2026-08-23
 
 ### Breaking Changes
