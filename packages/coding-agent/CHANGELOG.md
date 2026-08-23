@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Renamed the coding-agent CLI to Repi. Use the `repi` executable and the `.repi` configuration directory.
+
 ### Added
+
+- Added support for independently authenticated OpenAI Codex accounts that can be selected within the same Repi session.
+- Added `--yolo` to enable all built-in tools and trust project-local resources for one run.
 
 - Added transcript usage notices for compaction and branch summaries when cache miss notices are enabled.
 
@@ -14,6 +21,7 @@
 - Changed syntax highlighting to initialize only twenty common languages eagerly and defer the remaining grammars until after the initial TUI render, reducing CLI startup time.
 - Changed the Node.js CLI and RPC entrypoints to load a bundled runtime, reducing startup filesystem reads while keeping the public library and legacy module paths on the modular runtime for normal dependency identity.
 - Changed session sharing to render clickable terminal links and Radius shares to display only the artifact's canonical URL.
+- Changed release publishing to create GitHub Releases only, with Repi-named archives and standalone binaries.
 
 ### Fixed
 
