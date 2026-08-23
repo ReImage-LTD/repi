@@ -59,6 +59,8 @@ export interface CreateAgentSessionOptions {
 	 *   but keep extension/custom tools enabled
 	 */
 	noTools?: "all" | "builtin";
+	/** Enable every built-in tool, ignoring the configured default tool selection. */
+	enableAllBuiltInTools?: boolean;
 	/**
 	 * Optional allowlist of tool names.
 	 *
@@ -251,13 +253,20 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		thinkingLevel = clampThinkingLevel(model, thinkingLevel) as ThinkingLevel;
 	}
 
-	const defaultActiveToolNames: ToolName[] = ["read", "bash", "edit", "write"];
+	const defaultActiveToolNames: ToolName[] = options.enableAllBuiltInTools
+		? ["read", "bash", "edit", "write", "grep", "find", "ls"]
+		: ["read", "bash", "edit", "write"];
 	const configuredDefaultToolNames = settingsManager.getDefaultTools();
 	const allowedToolNames = options.tools ?? (options.noTools === "all" ? [] : undefined);
 	const excludedToolNames = options.excludeTools;
 	const excludedToolNameSet = excludedToolNames ? new Set(excludedToolNames) : undefined;
 	const initialActiveToolNames = (
-		options.tools ?? (options.noTools ? [] : (configuredDefaultToolNames ?? defaultActiveToolNames))
+		options.tools ??
+		(options.noTools
+			? []
+			: options.enableAllBuiltInTools
+				? defaultActiveToolNames
+				: (configuredDefaultToolNames ?? defaultActiveToolNames))
 	).filter((name) => !excludedToolNameSet?.has(name));
 
 	let agent: Agent;

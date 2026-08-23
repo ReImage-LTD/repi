@@ -356,6 +356,14 @@ describe("parseArgs", () => {
 		});
 	});
 
+	describe("--yolo flag", () => {
+		test("parses --yolo", () => {
+			const result = parseArgs(["--yolo"]);
+			expect(result.yolo).toBe(true);
+			expect(result.unknownFlags.has("yolo")).toBe(false);
+		});
+	});
+
 	describe("--offline flag", () => {
 		test("parses --offline flag", () => {
 			const result = parseArgs(["--offline"]);

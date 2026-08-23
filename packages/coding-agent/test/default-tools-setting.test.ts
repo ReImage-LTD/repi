@@ -10,7 +10,10 @@ import { type CreateAgentSessionOptions, createAgentSession, type InlineExtensio
 import { SessionManager } from "../src/core/session-manager.ts";
 import { SettingsManager } from "../src/core/settings-manager.ts";
 
-type ToolOptions = Pick<CreateAgentSessionOptions, "tools" | "excludeTools" | "noTools" | "customTools">;
+type ToolOptions = Pick<
+	CreateAgentSessionOptions,
+	"tools" | "excludeTools" | "noTools" | "enableAllBuiltInTools" | "customTools"
+>;
 
 describe("defaultTools setting", () => {
 	let tempDir: string;
@@ -145,6 +148,16 @@ describe("defaultTools setting", () => {
 				.sort(),
 		).toEqual(["bash", "edit", "find", "grep", "ls", "read", "write"]);
 		expect(session.getActiveToolNames()).toEqual(["ls"]);
+		session.dispose();
+	});
+
+	it("enables every built-in tool regardless of the configured default selection", async () => {
+		const session = await createSession(["read"], { enableAllBuiltInTools: true });
+
+		expect(session.getActiveToolNames()).toEqual(["read", "bash", "edit", "write", "grep", "find", "ls"]);
+		expect(session.systemPrompt).toContain("- grep:");
+		expect(session.systemPrompt).toContain("- find:");
+		expect(session.systemPrompt).toContain("- ls:");
 		session.dispose();
 	});
 });

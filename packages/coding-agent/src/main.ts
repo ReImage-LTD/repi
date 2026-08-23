@@ -524,16 +524,20 @@ function buildSessionOptions(
 	// (handled by caller before createAgentSession)
 
 	// Tools
-	if (parsed.noTools) {
-		options.noTools = "all";
-	} else if (parsed.noBuiltinTools) {
-		options.noTools = "builtin";
-	}
-	if (parsed.tools) {
-		options.tools = [...parsed.tools];
-	}
-	if (parsed.excludeTools) {
-		options.excludeTools = [...parsed.excludeTools];
+	if (parsed.yolo) {
+		options.enableAllBuiltInTools = true;
+	} else {
+		if (parsed.noTools) {
+			options.noTools = "all";
+		} else if (parsed.noBuiltinTools) {
+			options.noTools = "builtin";
+		}
+		if (parsed.tools) {
+			options.tools = [...parsed.tools];
+		}
+		if (parsed.excludeTools) {
+			options.excludeTools = [...parsed.excludeTools];
+		}
 	}
 
 	return { options, cliThinkingFromModel, diagnostics };
@@ -696,10 +700,9 @@ export async function main(args: string[], options?: MainOptions) {
 
 	const trustStore = new ProjectTrustStore(agentDir);
 	const sessionCwd = sessionManager.getCwd();
+	const projectTrustOverride = parsed.yolo ? true : parsed.projectTrustOverride;
 	const autoTrustOnReloadCwd =
-		parsed.projectTrustOverride === undefined && !hasTrustRequiringProjectResources(sessionCwd)
-			? sessionCwd
-			: undefined;
+		projectTrustOverride === undefined && !hasTrustRequiringProjectResources(sessionCwd) ? sessionCwd : undefined;
 	const trustPromptMode: AppMode = parsed.help || parsed.listModels !== undefined ? "print" : appMode;
 	const projectTrustByCwd = new Map<string, boolean>();
 
@@ -719,11 +722,11 @@ export async function main(args: string[], options?: MainOptions) {
 		const cachedProjectTrust = projectTrustByCwd.get(cwd);
 		const hasTrustRequiringResources = hasTrustRequiringProjectResources(cwd);
 		const shouldResolveProjectTrust =
-			parsed.projectTrustOverride === undefined && cachedProjectTrust === undefined && hasTrustRequiringResources;
+			projectTrustOverride === undefined && cachedProjectTrust === undefined && hasTrustRequiringResources;
 		const projectTrusted = shouldResolveProjectTrust
 			? false
 			: (cachedProjectTrust ??
-				parsed.projectTrustOverride ??
+				projectTrustOverride ??
 				(!hasTrustRequiringResources || trustStore.get(cwd) === true));
 		const runtimeSettingsManager = SettingsManager.create(cwd, agentDir, { projectTrusted });
 		const services = await createAgentSessionServices({
@@ -738,7 +741,7 @@ export async function main(args: string[], options?: MainOptions) {
 							const trusted = await resolveProjectTrusted({
 								cwd,
 								trustStore,
-								trustOverride: parsed.projectTrustOverride,
+								trustOverride: projectTrustOverride,
 								defaultProjectTrust: startupSettingsManager.getDefaultProjectTrust(),
 								extensionsResult,
 								projectTrustContext:
@@ -821,6 +824,7 @@ export async function main(args: string[], options?: MainOptions) {
 			tools: sessionOptions.tools,
 			excludeTools: sessionOptions.excludeTools,
 			noTools: sessionOptions.noTools,
+			enableAllBuiltInTools: sessionOptions.enableAllBuiltInTools,
 			customTools: sessionOptions.customTools,
 		});
 		const cliThinkingOverride = parsed.thinking !== undefined || cliThinkingFromModel;
